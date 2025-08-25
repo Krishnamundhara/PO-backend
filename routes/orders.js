@@ -5,14 +5,17 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all purchase orders
+// Get all purchase orders for the current user
 router.get('/', auth, async (req, res) => {
   try {
+    // Only fetch orders created by the current user
     const result = await db.query(
       `SELECT po.*, u.username as created_by_username 
        FROM purchase_orders po
        JOIN users u ON po.created_by = u.id
-       ORDER BY po.order_date DESC`
+       WHERE po.created_by = $1
+       ORDER BY po.order_date DESC`,
+       [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {
@@ -21,19 +24,19 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Get purchase order by ID
+// Get purchase order by ID (only if created by current user)
 router.get('/:id', auth, async (req, res) => {
   try {
     const result = await db.query(
       `SELECT po.*, u.username as created_by_username 
        FROM purchase_orders po
        JOIN users u ON po.created_by = u.id
-       WHERE po.id = $1`,
-      [req.params.id]
+       WHERE po.id = $1 AND po.created_by = $2`,
+      [req.params.id, req.user.id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Purchase order not found' });
+      return res.status(404).json({ message: 'Purchase order not found or unauthorized' });
     }
 
     res.json(result.rows[0]);
@@ -123,14 +126,14 @@ router.put('/:id', [
   } = req.body;
 
   try {
-    // Check if order exists
+    // Check if order exists and belongs to current user
     let result = await db.query(
-      'SELECT * FROM purchase_orders WHERE id = $1',
-      [req.params.id]
+      'SELECT * FROM purchase_orders WHERE id = $1 AND created_by = $2',
+      [req.params.id, req.user.id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Purchase order not found' });
+      return res.status(404).json({ message: 'Purchase order not found or unauthorized' });
     }
 
     // Check if order number already exists for a different order
@@ -169,16 +172,16 @@ router.put('/:id', [
   }
 });
 
-// Delete a purchase order
+// Delete a purchase order (only if created by current user)
 router.delete('/:id', auth, async (req, res) => {
   try {
     const result = await db.query(
-      'DELETE FROM purchase_orders WHERE id = $1 RETURNING id',
-      [req.params.id]
+      'DELETE FROM purchase_orders WHERE id = $1 AND created_by = $2 RETURNING id',
+      [req.params.id, req.user.id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Purchase order not found' });
+      return res.status(404).json({ message: 'Purchase order not found or unauthorized' });
     }
 
     res.json({ message: 'Purchase order deleted successfully' });

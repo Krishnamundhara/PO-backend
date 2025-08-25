@@ -44,10 +44,10 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// Get company profile
+// Get company profile for current user
 router.get('/', auth, async (req, res) => {
   try {
-    const result = await db.query('SELECT * FROM company_profile LIMIT 1');
+    const result = await db.query('SELECT * FROM company_profile WHERE user_id = $1', [req.user.id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Company profile not found' });
@@ -76,8 +76,8 @@ router.post('/', [auth, upload.single('logo')], async (req, res) => {
   }
 
   try {
-    // Check if a company profile already exists
-    const existingProfile = await db.query('SELECT * FROM company_profile LIMIT 1');
+    // Check if a company profile already exists for this user
+    const existingProfile = await db.query('SELECT * FROM company_profile WHERE user_id = $1', [req.user.id]);
     const logoPath = req.file ? `/uploads/${req.file.filename}` : (existingProfile.rows[0]?.logo_path || null);
     
     let result;
@@ -94,18 +94,18 @@ router.post('/', [auth, upload.single('logo')], async (req, res) => {
         bank_details = $6,
         logo_path = $7,
         updated_at = CURRENT_TIMESTAMP
-        WHERE id = $8 
+        WHERE id = $8 AND user_id = $9
         RETURNING *`,
-        [company_name, address, mobile, email, gst_number, bank_details, logoPath, existingProfile.rows[0].id]
+        [company_name, address, mobile, email, gst_number, bank_details, logoPath, existingProfile.rows[0].id, req.user.id]
       );
     } else {
       // Create new profile
       result = await db.query(
         `INSERT INTO company_profile 
-        (company_name, address, mobile, email, gst_number, bank_details, logo_path) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7) 
+        (company_name, address, mobile, email, gst_number, bank_details, logo_path, user_id) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
         RETURNING *`,
-        [company_name, address, mobile, email, gst_number, bank_details, logoPath]
+        [company_name, address, mobile, email, gst_number, bank_details, logoPath, req.user.id]
       );
     }
     
