@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://po-management-app.netlify.app', /\.netlify\.app$/] 
+    ? ['https://po-management-app.netlify.app', /\.netlify\.app$/, 'https://po-management.netlify.app'] 
     : 'http://localhost:3000',
   credentials: true
 }));
