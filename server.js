@@ -16,12 +16,22 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://po-management-app.netlify.app', /\.netlify\.app$/] 
+    : 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files (for uploaded company logos)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
 
 // API routes
 app.use('/api/auth', authRoutes);
