@@ -21,7 +21,11 @@ app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://po-management-app.netlify.app', /\.netlify\.app$/, 'https://po-management.netlify.app', 'https://po-sys.netlify.app'] 
     : 'http://localhost:3000',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,10 +33,8 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files (for uploaded company logos)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Health check endpoint for Render
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
-});
+// Import health routes
+const healthRoutes = require('./routes/health');
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -40,6 +42,16 @@ app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', healthRoutes); // Health routes for API status checking
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'Server is running', 
+    timestamp: new Date().toISOString() 
+  });
+});
 
 // Base route
 app.get('/', (req, res) => {
