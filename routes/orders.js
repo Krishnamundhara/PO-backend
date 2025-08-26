@@ -73,10 +73,10 @@ router.post('/', [
   } = req.body;
 
   try {
-    // Check if order number already exists
+    // Check if order number already exists for the current user
     let result = await db.query(
-      'SELECT * FROM purchase_orders WHERE order_no = $1',
-      [order_no]
+      'SELECT * FROM purchase_orders WHERE order_no = $1 AND created_by = $2',
+      [order_no, req.user.id]
     );
 
     if (result.rows.length > 0) {
