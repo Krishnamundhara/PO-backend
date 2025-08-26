@@ -12,7 +12,11 @@ This is a comprehensive **full-stack web application** for managing **purchase o
 - **Password encryption** for enhanced security
 
 ### 👥 User Management
-- **Multi-tenant architecture** with data isolation between users
+- **Strict multi-tenant architecture** with complete data isolation between users
+  - Each user has their own private data environment
+  - User X's data is never visible to User Y
+  - New users start with a fresh, empty workspace
+  - All data is tied to user accounts, ensuring complete separation
 - **Admin dashboard** for user management
   - Add/edit/delete users
   - Update user roles and permissions
@@ -92,11 +96,20 @@ This is a comprehensive **full-stack web application** for managing **purchase o
 
 ## 🔒 Security Features
 - **JWT Authentication** - Secure token-based authentication
-- **Data Isolation** - Users can only access their own data
-- **Password Hashing** - Secure storage of user credentials
+- **Complete Data Isolation** - Users can only access their own data
+  - Purchase orders are user-specific with strict filtering by created_by
+  - Company profiles are user-specific with user_id foreign key constraints
+  - Database queries explicitly filter by user_id/created_by
+  - Routes enforce ownership checks before allowing access
+  - Database schema enforces isolation with NOT NULL constraints and indexes
+  - Admin tool to verify and fix any potential data isolation issues
+  - Clear UI notices throughout the app to inform users about data isolation
+  - Migrations to enforce data consistency and isolation
+- **Password Hashing** - Secure storage of user credentials using bcrypt
 - **Role-based Authorization** - Different permissions for admins and regular users
 - **Protected API Endpoints** - Authentication middleware for secure routes
 - **CORS Configuration** - Controlled access to the API
+- **Audit Trail** - System logs to track important actions
 
 ## 🚀 Deployment
 
@@ -135,9 +148,17 @@ The application is deployed with a decoupled architecture:
 6. **Logout** - Securely end the session
 
 ### Multi-tenant Architecture
-- Each user has their own isolated data environment
+- Each user has their own completely isolated data environment
 - Users cannot access data belonging to other users
-- Admins have special privileges to manage user accounts
+- New users start with a completely fresh and empty workspace
+- All database queries explicitly filter records by the current user's ID (created_by or user_id)
+- Backend routes enforce ownership checks before allowing read/write operations
+- Database schema enforces isolation with NOT NULL constraints and foreign key relationships
+- Custom migrations ensure data integrity and isolation (see backend/migrations/)
+- Admin verification tools can detect and fix any potential data isolation issues
+- Clear UI notices throughout the application to inform users about data isolation
+- Admins have special privileges to manage user accounts but still see only their own data
+- Complete separation of concerns ensures privacy, security, and data integrity
 
 ## 💻 Development Setup
 
